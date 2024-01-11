@@ -1,0 +1,7 @@
+[gd_resource type="LabelSettings" load_steps=2 format=3 uid="uid://dv78feojo787h"]
+
+[ext_resource type="FontFile" uid="uid://5v6xe72n1e76" path="res://assets/fonts/gemunu-libre-v8-latin-700.ttf" id="1_m5c18"]
+
+[resource]
+font = ExtResource("1_m5c18")
+font_size = 28

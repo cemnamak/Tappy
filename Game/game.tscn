@@ -1,16 +1,67 @@
-[gd_scene load_steps=5 format=3 uid="uid://bq8a874yqsk0g"]
+[gd_scene load_steps=8 format=3 uid="uid://bpk0gyjr2ieh"]
 
-[ext_resource type="Texture2D" uid="uid://c8u74c10v1ypy" path="res://assets/background/rocks_2.png" id="1_xav0q"]
 [ext_resource type="PackedScene" uid="uid://nbturjakod43" path="res://plane/plane_cb.tscn" id="2_rbxtg"]
+[ext_resource type="PackedScene" uid="uid://dkmpqy1crt5q7" path="res://scrolling_bg/scrolling_bg.tscn" id="2_s6ulc"]
 [ext_resource type="PackedScene" uid="uid://bqitbei0xtmmp" path="res://pipes/pipes.tscn" id="3_ix6yi"]
+[ext_resource type="PackedScene" uid="uid://bv6dqlklmhcc7" path="res://hud/hud.tscn" id="4_xi2kl"]
+[ext_resource type="PackedScene" uid="uid://cin3x2g3ewbq3" path="res://game_over/game_over.tscn" id="5_62rcb"]
+
+[sub_resource type="GDScript" id="GDScript_vg113"]
+script/source = "extends Node2D
+
+@export var pipes_scene:PackedScene
+@onready var spawn_u = $SpawnU
+@onready var spawn_l = $SpawnL
+@onready var pipe_holder = $PipeHolder
+@onready var spawn_timer = $SpawnTimer
+
+# Called when the node enters the scene tree for the first time.
+func _ready():
+	GameManager.on_game_over.connect(on_game_over)
+	GameManager.on_score_updated.connect(on_score_updated)
+	spawn_pipes()
+
+
+# Called every frame. 'delta' is the elapsed time since the previous frame.
+func _process(delta):
+	pass
+
+
+func spawn_pipes()-> void:
+	var y_pos = randf_range(spawn_u.position.y,spawn_l.position.y)
+	var new_pipes = pipes_scene.instantiate()
+	new_pipes.position = Vector2(spawn_u.position.x,y_pos)
+	pipe_holder.add_child(new_pipes)
+
+func stop_pipes()-> void:
+	spawn_timer.stop()
+	for pipe in pipe_holder.get_children():
+		pipe.set_process(false)
+
+func _on_timer_timeout()-> void:
+	spawn_pipes()
+
+
+func on_game_over()-> void:
+	stop_pipes()	
+	
+func on_score_updated()-> void:
+	if spawn_timer.wait_time > 0.9:
+		spawn_timer.wait_time -= GameManager.spawn_factor
+
+	
+	
+	
+
+"
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_k0hem"]
 
 [node name="Game" type="Node2D"]
+script = SubResource("GDScript_vg113")
+pipes_scene = ExtResource("3_ix6yi")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
-position = Vector2(506, 332)
-texture = ExtResource("1_xav0q")
+[node name="ScrollingBg" parent="." instance=ExtResource("2_s6ulc")]
 
 [node name="PlaneCB" parent="." instance=ExtResource("2_rbxtg")]
 position = Vector2(62, 152)
@@ -23,5 +74,33 @@ scale = Vector2(1, 0.599995)
 scale = Vector2(26.4, 2.32)
 shape = SubResource("RectangleShape2D_k0hem")
 
-[node name="Pipes" parent="." instance=ExtResource("3_ix6yi")]
-position = Vector2(375, 210)
+[node name="sky" type="StaticBody2D" parent="."]
+visible = false
+position = Vector2(238.5, 833.5)
+scale = Vector2(1, 0.599995)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="sky"]
+position = Vector2(0, -1330.84)
+scale = Vector2(26.4, 2.32)
+shape = SubResource("RectangleShape2D_k0hem")
+
+[node name="SpawnU" type="Marker2D" parent="."]
+position = Vector2(530, 340)
+
+[node name="SpawnL" type="Marker2D" parent="."]
+position = Vector2(530, 540)
+
+[node name="PipeHolder" type="Node" parent="."]
+
+[node name="SpawnTimer" type="Timer" parent="."]
+wait_time = 2.0
+autostart = true
+
+[node name="CanvasLayer" type="CanvasLayer" parent="."]
+
+[node name="Hud" parent="CanvasLayer" instance=ExtResource("4_xi2kl")]
+
+[node name="GameOver" parent="CanvasLayer" instance=ExtResource("5_62rcb")]
+visible = false
+
+[connection signal="timeout" from="SpawnTimer" to="." method="_on_timer_timeout"]
